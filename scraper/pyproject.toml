@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "Unofficial VFSC Scraper"
+version = "0.1.0"
+description = ""
+authors = ["Michael Toohig <michael.toohig@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+scrapy-playwright = "^0.0.35"
+arq = "^0.26.0"  # did I forget to remove this?
+networkx = "^3.3"
+numpy = "^2.0.0"
+scipy = "^1.14.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

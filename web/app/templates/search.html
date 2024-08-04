@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% block styles %}
+  {{ super() }}
+  {{ styles }}
+  <style>
+    .result-item {
+        transition: background-color 0.3s;
+    }
+    .result-item:hover {
+        background-color: #f8f9fa;
+    }
+  </style>
+{% endblock %}
+{% block content %}
+<div class="container pb-5">
+  <div class="row justify-content-center">
+    <div class="col-auto col-md-10">
+      <h1>Search</h1>
+      <div>
+        <form action="{{ url_for('graph.search') }}" method="post">
+          <div class="input-group mb-3">
+            <input type="search" class="form-control" name="query" placeholder="Search here..." aria-label="Search here" aria-describedby="button-search">
+            <input class="btn btn-outline-secondary" type="submit" id="button-search">
+          </div>
+        </form>
+      </div>
+      <ul class="list-group">
+          {% for result in results %}
+          <li class="list-group-item result-item">
+            {% if result.type == "company" %}
+            <a href="{{ url_for('graph.company', id=result.id) }}" class="text-decoration-none text-dark">
+            {% elif result.type == "individual" %}
+            <a href="{{ url_for('graph.individual', id=result.id) }}" class="text-decoration-none text-dark">
+            {% endif %}
+            <div class="d-flex justify-content-between align-items-center">
+              <h5 class="mb-0">{{ result.name }}</h5>
+              {% if result.type == "company" %}
+              <small class="text-muted">{{ result.status }}</small>
+              {% endif %}
+            </div>
+              </a>
+          </li>
+          {% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+{% include 'partials/footer.html' %}
+{% endblock %}
+{% block scripts %}
+  {{ super() }}
+{% endblock %}

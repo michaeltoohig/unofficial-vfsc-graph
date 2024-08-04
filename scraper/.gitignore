@@ -1,0 +1,13 @@
+# a lot of dev and test files and raw data files not yet organized at this stage
+*.txt
+*-json.py
+*.sh
+*.log
+*.pkl
+*.db
+./data
+
+# random scripts I'll delete later
+play.py
+process.py
+fix-missing-shareholder-names.py
