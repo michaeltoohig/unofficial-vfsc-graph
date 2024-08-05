@@ -3,8 +3,8 @@ ARG POETRY_VERSION=1.8.3
 ARG UID=1000
 ARG GID=1000
 ARG USER=app
+ARG PW_BROWSER_PATH=/pw-browsers
 
-# tiangolo/uwsgi-nginx-flask:python${PYTHON_VERSION} as base
 FROM python:${PYTHON_VERSION}-slim as base
 ENV PYTHONDONTWRITEBYTECODE=1 \
   PYTHONFAULTHANDLER=1 \
@@ -51,6 +51,10 @@ RUN groupadd -g ${GID} ${USER} \
   && echo "${USER} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers \
   && getent passwd ${USER}
 RUN poetry install --no-root --no-interaction --no-ansi
+# install browser
+ARG PW_BROWSER_PATH
+ENV PLAYWRIGHT_BROWSERS_PATH=${PW_BROWSER_PATH}
+RUN playwright install --with-deps chromium
 COPY . .
 
 FROM base as prod
@@ -58,4 +62,7 @@ ARG PYTHON_VERSION
 COPY --from=poetry \
   /usr/local/lib/python${PYTHON_VERSION}/site-packages \
   /usr/local/lib/python${PYTHON_VERSION}/site-packages
+ARG PW_BROWSER_PATH
+ENV PLAYWRIGHT_BROWSERS_PATH=${PW_BROWSER_PATH}
+COPY --from=dev ${PW_BROWSER_PATH} ${PW_BROWSER_PATH}
 COPY . .
