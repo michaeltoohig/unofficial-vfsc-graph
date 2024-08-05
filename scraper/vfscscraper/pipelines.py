@@ -117,6 +117,7 @@ class DataManagerPipeline:
 
     def process_item(self, item, spider):
         try:
+            spider.logger.info("Processing item: %s", item["company_number"])
             self.data_manager.update_item(item)
             self.items_processed += 1
             return item

@@ -148,7 +148,6 @@ class Filing(scrapy.Item):
 
 
 class Company(scrapy.Item):
-
     company_name = scrapy.Field(input_processor=MapCompose(strip_name))
     company_number = scrapy.Field()
     company_type = scrapy.Field()

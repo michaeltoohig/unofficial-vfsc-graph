@@ -62,6 +62,7 @@ class VfscSpider(scrapy.Spider):
         self.company_status = None
         if company_status is not None:
             self.company_status = VfscCompanyStatus(company_status)
+        self.company_type = None
         if company_type is not None:
             self.company_type = VfscCompanyType(company_type)
 

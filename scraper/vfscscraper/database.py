@@ -6,8 +6,9 @@ from datetime import datetime, UTC
 
 class DataManager:
     def __init__(self):
-        self.current_db = sqlite3.connect("current_state.db")
-        self.history_db = sqlite3.connect("change_history.db")
+        # self.logger = logger
+        self.current_db = sqlite3.connect("xxx_current_state.db")
+        self.history_db = sqlite3.connect("xxx_change_history.db")
         self.setup_databases()
 
     def setup_databases(self):
@@ -104,267 +105,443 @@ class DataManager:
                     company_number TEXT,
                     old_data JSON,
                     new_data JSON,
-                    timestamp TIMESTAMP,
+                    timestamp TIMESTAMP
                 )
             """
             )
 
+    def execute_query(self, db, query, params=None):
+        try:
+            with db:
+                cursor = db.cursor()
+                if params:
+                    cursor.execute(query, params)
+                else:
+                    cursor.execute(query)
+                return cursor.lastrowid
+        except sqlite3.Error as e:
+            # self.logger.error(f"Database error: {e}")
+            raise
+
     def start_scraping_session(self):
-        with self.history_db:
-            cursor = self.history_db.cursor()
-            cursor.execute(
-                """
-                INSERT INTO scraping_sessions (start_time, items_processed, status)
-                VALUES (?, 0, 'in-progress')
-            """,
-                (datetime.now(UTC),),
-            )
-            return cursor.lastrowid
+        query = """
+        INSERT INTO scraping_sessions (start_time, items_processed, status)
+        VALUES (?, 0, 'in-progress')
+        """
+        return self.execute_query(self.history_db, query, (datetime.now(UTC),))
 
     def end_scraping_session(self, session_id, items_processed, status="success"):
-        with self.history_db:
-            self.history_db.execute(
-                """
-                UPDATE scraping_sessions
-                SET end_time = ?, items_processed = ?, status = ?
-                WHERE id = ?
-            """,
-                (datetime.now(UTC), items_processed, status, session_id),
-            )
+        query = """
+        UPDATE scraping_sessions
+        SET end_time = ?, items_processed = ?, status = ?
+        WHERE id = ?
+        """
+        self.execute_query(
+            self.history_db,
+            query,
+            (datetime.now(UTC), items_processed, status, session_id),
+        )
 
     def record_failed_item(self, session_id, company_number, error_message):
-        with self.history_db:
-            self.history_db.execute(
-                """
-                INSERT INTO failed_items (session_id, company_number, error_message, timestamp)
-                VALUES (?, ?, ?, ?)
-            """,
-                (session_id, company_number, error_message, datetime.now(UTC)),
-            )
-
-    """
-    ---
-    """
-
-    def get_company_old_data(self, company_number):
-        cursor = self.history_db.cursor()
-        cursor.execute(
-            """
-            SELECT new_data_hash
-            FROM changed_companies
-            WHERE company_number = ?
-            ORDER BY timestamp DESC
-            LIMIT 1
-            """,
-            (company_number,),
+        query = """
+        INSERT INTO failed_items (session_id, company_number, error_message, timestamp)
+        VALUES (?, ?, ?, ?)
+        """
+        self.execute_query(
+            self.history_db,
+            query,
+            (session_id, company_number, error_message, datetime.now(UTC)),
         )
-        result = cursor.fetchone()
-        return result[0] if result else None
+
+    def get_company_last_known_data(self, company_number):
+        query = """
+        SELECT new_data
+        FROM changed_companies
+        WHERE company_number = ?
+        ORDER BY timestamp DESC
+        LIMIT 1
+        """
+        with self.history_db:
+            cursor = self.history_db.cursor()
+            cursor.execute(query, (company_number,))
+            result = cursor.fetchone()
+        return json.loads(result[0]) if result else None
 
     def get_company_id_by_name(self, company_name):
-        cursor = self.current_db.cursor()
-        cursor.execute(
-            "SELECT id FROM companies WHERE company_name = ?", (company_name,)
-        )
-        result = cursor.fetchone()
+        """Fetch company by name.
+
+        We have to assume VFSC is verifying names are unique and spelled correctly
+        which is not always true for the latter.
+
+        However, shareholders and directors are only referenced by name so this is
+        the best option to associate a known company in these cases.
+        """
+        query = "SELECT id FROM companies WHERE company_name = ?"
+        with self.current_db:
+            cursor = self.current_db.cursor()
+            cursor.execute(query, (company_name,))
+            result = cursor.fetchone()
         return result[0] if result else None
+
+    def insert_company(
+        self,
+        company_data,
+    ):
+        """
+        Insert a new company.
+
+        Only `company_name` is required because a company may be
+        discovered as a director or shareholder of another company
+        and we don't yet have more information.
+        """
+        query = """
+        INSERT INTO companies (company_name, company_number, company_type, entity_type, 
+        entity_status, registration_date, annual_filing_month, email_address, 
+        office_address, postal_address, total_shares, lastseen)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """
+        params = (
+            company_data.get("company_name"),
+            company_data.get("company_number", None),
+            company_data.get("company_type", None),
+            company_data.get("entity_type", None),
+            company_data.get("entity_status", None),
+            company_data.get("registration_date", None),
+            company_data.get("annual_filing_month", None),
+            company_data.get("email_address", None),
+            company_data.get("office_address", None),
+            company_data.get("postal_address", None),
+            company_data.get("total_shares", None),
+            datetime.now(UTC),
+        )
+        return self.execute_query(self.current_db, query, params)
+        # with self.current_db:
+        #     cursor = self.current_db.cursor()
+        #     cursor.execute(
+        #         """
+        #         INSERT INTO companies (company_name, company_number, company_type, entity_type, entity_status, registration_date, annual_filing_month, email_address, office_address, postal_address, total_shares, lastseen)
+        #         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        #     """,
+        #         (
+        #             company_name,
+        #             company_number,
+        #             company_type,
+        #             entity_type,
+        #             entity_status,
+        #             registration_date,
+        #             annual_filing_month,
+        #             email_address,
+        #             office_address,
+        #             postal_address,
+        #             total_shares,
+        #             datetime.now(UTC),
+        #         ),
+        #     )
+        #     return cursor.lastrowid
+
+    def update_company(self, company_id, company_data):
+        query = """
+        UPDATE companies
+        SET company_number = ?, company_type = ?, entity_type = ?,
+            entity_status = ?, registration_date = ?, annual_filing_month = ?,
+            email_address = ?, office_address = ?, postal_address = ?, total_shares = ?,
+            lastseen = ?
+        WHERE id = ?
+        """
+        params = (
+            company_data["company_number"],
+            company_data["company_type"],
+            company_data["general_details"]["entity_type"],
+            company_data["general_details"]["entity_status"],
+            company_data["general_details"]["registration_date"],
+            company_data["general_details"]["annual_filing_month"],
+            company_data["addresses"]["email_address"],
+            company_data["addresses"]["office_address"]["current"]["address"],
+            company_data["addresses"]["postal_address"]["current"]["address"],
+            company_data["total_shares"],
+            datetime.now(UTC),
+            company_id,
+        )
+        self.execute_query(self.current_db, query, params)
 
     def upsert_company(self, item):
         company_id = self.get_company_id_by_name(item["company_name"])
         if company_id is None:
-            with self.current_db:
-                cursor = self.current_db.cursor()
-                cursor.execute(
-                    """
-                INSERT INTO companies (company_name, company_number, company_type, entity_type, entity_status, registration_date, annual_filing_month, email_address, office_address, postal_address, total_shares, lastseen)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """,
-                    (
-                        item["company_name"],
-                        item["company_number"],
-                        item["company_type"],
-                        item["general_details"]["entity_type"],
-                        item["general_details"]["entity_status"],
-                        item["general_details"]["registration_date"],
-                        item["general_details"]["annual_filing_month"],
-                        item["addresses"]["email_address"],
-                        item["addresses"]["office_address"]["current"]["address"],
-                        item["addresses"]["postal_address"]["current"]["address"],
-                        item["total_shares"],
-                        datetime.now(UTC),
-                    ),
-                )
-                company_id = cursor.lastrowid
+            company_id = self.insert_company(item)
         else:
-            with self.current_db:
-                cursor = self.current_db.cursor()
-                cursor.execute(
-                    """
-                    UPDATE companies
-                    SET company_number = ?, company_type = ?, entity_type = ?,
-                        entity_status = ?, registration_date = ?, annual_filing_month = ?,
-                        email_address = ?, office_address = ?, postal_address = ?, total_shares = ?,
-                        lastseen = ?
-                    WHERE id = ?
-                """,
-                    (
-                        item["company_name"],
-                        item["company_number"],
-                        item["company_type"],
-                        item["general_details"]["entity_type"],
-                        item["general_details"]["entity_status"],
-                        item["general_details"]["registration_date"],
-                        item["general_details"]["annual_filing_month"],
-                        item["addresses"]["email_address"],
-                        item["addresses"]["office_address"]["current"]["address"],
-                        item["addresses"]["postal_address"]["current"]["address"],
-                        item["total_shares"],
-                        datetime.now(UTC),
-                        company_id,
-                    ),
-                )
+            self.update_company(company_id, item)
         return company_id
+        # company_id = self.get_company_id_by_name(item["company_name"])
+        # if company_id is None:
+        #     company_id = self.insert_company(
+        #         company_name=item["company_name"],
+        #         company_number=item["company_number"],
+        #         company_type=item["company_type"],
+        #         entity_type=item["general_details"]["entity_type"],
+        #         entity_status=item["general_details"]["entity_status"],
+        #         registration_date=item["general_details"]["registration_date"],
+        #         annual_filing_month=item["general_details"]["annual_filing_month"],
+        #         email_address=item["addresses"]["email_address"],
+        #         office_address=item["addresses"]["office_address"]["current"][
+        #             "address"
+        #         ],
+        #         postal_address=item["addresses"]["postal_address"]["current"][
+        #             "address"
+        #         ],
+        #         total_shares=item["total_shares"],
+        #     )
+        # else:
+        #     with self.current_db:
+        #         cursor = self.current_db.cursor()
+        #         cursor.execute(
+        #             """
+        #             UPDATE companies
+        #             SET company_number = ?, company_type = ?, entity_type = ?,
+        #                 entity_status = ?, registration_date = ?, annual_filing_month = ?,
+        #                 email_address = ?, office_address = ?, postal_address = ?, total_shares = ?,
+        #                 lastseen = ?
+        #             WHERE id = ?
+        #         """,
+        #             (
+        #                 item["company_name"],
+        #                 item["company_number"],
+        #                 item["company_type"],
+        #                 item["general_details"]["entity_type"],
+        #                 item["general_details"]["entity_status"],
+        #                 item["general_details"]["registration_date"],
+        #                 item["general_details"]["annual_filing_month"],
+        #                 item["addresses"]["email_address"],
+        #                 item["addresses"]["office_address"]["current"]["address"],
+        #                 item["addresses"]["postal_address"]["current"]["address"],
+        #                 item["total_shares"],
+        #                 datetime.now(UTC),
+        #                 company_id,
+        #             ),
+        #         )
+        # return company_id
+        #
 
     def _hash_company_data(self, company_data):
         dict_str = json.dumps(company_data)
         return hashlib.sha256(dict_str.encode()).hexdigest()
 
     def is_data_unchanged(self, old_data, new_data):
+        """Compare new scraped data against older data to check for any updates."""
         old_data_hash = self._hash_company_data(old_data)
         new_data_hash = self._hash_company_data(new_data)
         return old_data_hash == new_data_hash
 
     def update_item(self, item):
-        company_number = item["company_number"]
-        assert company_number, "Company number is missing!"
+        company_number = item.get("company_number")
+        if not company_number:
+            raise ValueError("Company number is missing!")
 
-        old_data = self.get_company_old_data(company_number)
+        old_data = self.get_company_last_known_data(company_number)
 
         if old_data and self.is_data_unchanged(old_data, item):
-            # Data has not changed; update lastseen
-            with self.current_db:
-                self.current_db.execute(
-                    """
-                    UPDATE companies
-                    SET lastseen = ?
-                    WHERE company_number = ?
-                """,
-                    (datetime.now(UTC), company_number),
-                )
+            # self.logger.info(f"{company_number} has no changes; updating lastseen")
+            self.update_company_lastseen(company_number)
         else:
-            # Data has changed or no history exists; update the current db and add to history
             company_id = self.upsert_company(item)
-            self.remove_company_relationships(company_id)
-            # TODO: reset directors, reset shareholders, upsert individuals
-            # - remove old directors and shareholders
-            # - def insert_director
-            # - def insert_shareholder
-            # - def get_or_create_entity
-            # - def get_or_create_individual
-            # Esentially just recreating the func `insert_company_data` from `test-sqlite.py`
+            # self.logger.info(f"{company_number} updating relationships")
+            self.update_company_relationships(company_id, item)
+            self.record_company_change(company_number, old_data, item)
 
-            # Add to history
-            with self.history_db:
-                self.history_db.execute(
-                    """
-                    INSERT INTO changed_companies (company_number, old_data, new_data, timestamp)
-                    VALUES (?, ?, ?, ?)
-                    """,
-                    (
-                        company_number,
-                        json.dumps(old_data),
-                        json.dumps(item),
-                        datetime.now(UTC),
-                    ),
+            # self.remove_company_relationships(company_id)
+            # if "directors" in item:
+            #     for director in item["directors"].get("current", []):
+            #         self.create_director_relationsip(company_id, director)
+            #     # TODO: former directors can also be added to graph here
+            # if "shareholders" in item:
+            #     for shareholder in item["shareholders"].get("current", []):
+            #         self.create_shareholder_relationship(
+            #             company_id,
+            #             item["shares"],
+            #             shareholder,
+            #         )
+            #     # TODO: former shareholders can also be added to graph here
+            #
+            # # Add to history
+            # with self.history_db:
+            #     self.history_db.execute(
+            #         """
+            #         INSERT INTO changed_companies (company_number, old_data, new_data, timestamp)
+            #         VALUES (?, ?, ?, ?)
+            #         """,
+            #         (
+            #             company_number,
+            #             json.dumps(old_data),
+            #             json.dumps(item),
+            #             datetime.now(UTC),
+            #         ),
+            #     )
+            #
+
+    def update_company_lastseen(self, company_number):
+        query = "UPDATE companies SET lastseen = ? WHERE company_number = ?"
+        self.execute_query(self.current_db, query, (datetime.now(UTC), company_number))
+
+    def update_company_relationships(self, company_id, item):
+        self.remove_company_relationships(company_id)
+        if "directors" in item:
+            for director in item["directors"].get("current", []):
+                self.create_director_relationship(company_id, director)
+            # NOTE: former directors can be added to graph here
+        if "shareholders" in item:
+            for shareholder in item["shareholders"].get("current", []):
+                self.create_shareholder_relationship(
+                    company_id, item["shares"], shareholder
                 )
+            # NOTE: former shareholders can be added to graph here
+
+    def record_company_change(self, company_number, old_data, new_data):
+        query = """
+        INSERT INTO changed_companies (company_number, old_data, new_data, timestamp)
+        VALUES (?, ?, ?, ?)
+        """
+        self.execute_query(
+            self.history_db,
+            query,
+            (
+                company_number,
+                json.dumps(old_data),
+                json.dumps(new_data),
+                datetime.now(UTC),
+            ),
+        )
 
     def get_or_create_entity(self, entity):
-        pass
+        """Fetch an entity (company) or create a new one."""
+        name = entity["entity_name"]
+        entity_id = self.get_company_id_by_name(name)
+        if not entity_id:
+            entity_id = self.insert_company(entity)
+        return entity_id
 
     def get_or_create_individual(self, individual):
-        pass
+        """Fetch an individual or create a new one."""
+        name = individual["name"]
+        query = "SELECT id FROM individuals WHERE name = ?"
+        result = self.execute_query(self.current_db, query, (name,))
 
-    def _hash_company_data(self, company_data):
-        dict_str = json.dumps(company_data)
-        return hashlib.sha256(dict_str.encode()).hexdigest()
+        if result:
+            return result[0]
+
+        insert_query = "INSERT INTO individuals (name) VALUES (?)"
+        return self.execute_query(self.current_db, insert_query, (name,))
+        # name = individual["name"]
+        # with self.current_db:
+        #     cursor = self.current_db.cursor()
+        #     cursor.execute(
+        #         """
+        #         SELECT id FROM individuals WHERE name = ?
+        #     """,
+        #         (name,),
+        #     )
+        #     result = cursor.fetchone()
+        #     individual_id = result[0] if result else None
+        #     if not individual_id:
+        #         cursor.execute(
+        #             """
+        #             INSERT INTO individuals (name) VALUES (?)
+        #         """,
+        #             (name,),
+        #         )
+        #         individual_id = cursor.lastrowid
+        # return individual_id
+        #
+
+    def create_director_relationship(self, company_id, director):
+        """Create an entry for a director relationship with the given company."""
+        individual_id = None
+        entity_id = None
+        if "name" in director:
+            individual_id = self.get_or_create_individual(director)
+        elif "entity_name" in director:
+            entity_id = self.get_or_create_entity(director)
+        else:
+            raise ValueError("Missing director name or entity_name")
+
+        query = """
+        INSERT INTO company_directors (company_id, individual_id, entity_id, appointed_date, ceased_at)
+        VALUES (?, ?, ?, ?, ?)
+        """
+        params = (
+            company_id,
+            individual_id,
+            entity_id,
+            director.get("appointed_date"),
+            director.get("ceased_at"),
+        )
+        self.execute_query(self.current_db, query, params)
+
+    def get_number_of_shares(self, shares, shareholder):
+        """Matches the given shareholder to their number of shares found in a separate table."""
+        for share in shares:
+            if (share.get("individual_name") == shareholder.get("name")) or (
+                share.get("entity_name") == shareholder.get("entity_name")
+            ):
+                return share["number_of_shares"]
+        return 0
+
+    def create_shareholder_relationship(self, company_id, shares, shareholder):
+        """Create an entry for a shareholder relationship with the given company."""
+        individual_id = None
+        entity_id = None
+        appointed_date = shareholder.get("appointed_date", None)
+        ceased_at = shareholder.get("ceased_at", None)
+        number_of_shares = self.get_number_of_shares(shares, shareholder)
+        if "name" in shareholder:
+            individual_id = self.get_or_create_individual(shareholder)
+        elif "entity_name" in shareholder:
+            entity_id = self.get_or_create_entity(shareholder)
+        else:
+            raise ValueError("Missing shareholder name or entity_name")
+
+        number_of_shares = self.get_number_of_shares(shares, shareholder)
+
+        query = """
+        INSERT INTO company_shareholders (company_id, individual_id, entity_id, appointed_date, ceased_at, number_of_shares)
+        VALUES (?, ?, ?, ?, ?, ?)
+        """
+        params = (
+            company_id,
+            individual_id,
+            entity_id,
+            shareholder.get("appointed_date"),
+            shareholder.get("ceased_at"),
+            number_of_shares,
+        )
+        self.execute_query(self.current_db, query, params)
+        #
+        # with self.current_db:
+        #     self.current_db.execute(
+        #         """
+        #     """,
+        #         (
+        #             company_id,
+        #             individual_id,
+        #             entity_id,
+        #             appointed_date,
+        #             ceased_at,
+        #             number_of_shares,
+        #         ),
+        #     )
+        #
 
     def remove_company_relationships(self, company_id):
-        with self.current_db:
-            self.current_db.execute(
-                """
-                DELETE FROM company_directors
-                WHERE company_id = ?
-            """,
-                (company_id,),
-            )
-            self.current_db.execute(
-                """
-                DELETE FROM company_shareholders
-                WHERE company_id = ?
-            """,
-                (company_id,),
-            )
+        """Remove all relationships with the given company.
 
-    #
-    # def _update_item(self, item):
-    #     # TODO: check the params and what we will recieve here
-    #     # Get the current state of the item
-    #     company_id = self.upsert_company(item)
-    #     #
-    #     company_name = item["company_name"]
-    #     company_id = self.get_company_id_by_name(company_name)
-    #     if company_id:
-    #         # get data -> compare -> update / lastseen
-    #         pass
-    #     else:
-    #         # insert new company
-    #         pass
-    #
-    #     # Update the current state
-    #     with self.current_db:
-    #         self.current_db.execute(
-    #             """
-    #             INSERT OR REPLACE INTO companies (company_name, company_number, company_type, entity_type, entity_status, registration_date, annual_filing_month, email_address, office_address, postal_address, total_shares)
-    #             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    #         """,
-    #             (
-    #                 company["company_name"],
-    #                 company["company_number"],
-    #                 company["company_type"],
-    #                 company["general_details"]["entity_type"],
-    #                 company["general_details"]["entity_status"],
-    #                 company["general_details"]["registration_date"],
-    #                 company["general_details"]["annual_filing_month"],
-    #                 company["addresses"]["email_address"],
-    #                 company["addresses"]["office_address"]["current"]["address"],
-    #                 company["addresses"]["postal_address"]["current"]["address"],
-    #                 company["total_shares"],
-    #             ),
-    #         )
-    #
-    #     # TODO: confirm change at all via some sort of hash of JSON of company scraped
-    #
-    #     # Log the change
-    #     operation = "UPDATE" if current_data else "INSERT"
-    #     with self.history_db:
-    #         self.history_db.execute(
-    #             """
-    #             INSERT INTO changes (company_number, operation, old_data, new_data, timestamp)
-    #             VALUES (?, ?, ?, ?, ?)
-    #         """,
-    #             (
-    #                 company_number,
-    #                 operation,
-    #                 json.dumps(current_data),
-    #                 json.dumps(new_data),
-    #                 datetime.now(),
-    #             ),
-    #         )
+        When a company has updated we rewrite all the relationships which
+        requires removing and recreate the relationships as its easy and efficient enough.
+        """
+        queries = [
+            "DELETE FROM company_directors WHERE company_id = ?",
+            "DELETE FROM company_shareholders WHERE company_id = ?",
+        ]
 
-    def get_all_items(self):
-        cursor = self.current_db.cursor()
-        cursor.execute("SELECT id, data FROM items")
-        return {row[0]: json.loads(row[1]) for row in cursor.fetchall()}
+        for query in queries:
+            self.execute_query(self.current_db, query, (company_id,))
 
     def get_changes(self, start_time=None, end_time=None):
         query = "SELECT * FROM changes WHERE 1=1"
@@ -380,37 +557,3 @@ class DataManager:
         cursor = self.history_db.cursor()
         cursor.execute(query, params)
         return cursor.fetchall()
-
-
-def sync_to_web_service(data_manager):
-    # This function would be responsible for sending the current state to the web service
-    current_state = data_manager.get_all_items()
-    # Implement the logic to send current_state to the web service
-    # This could be an API call, file transfer, etc.
-    print(f"Syncing {len(current_state)} items to web service")
-
-
-# Usage example
-if __name__ == "__main__":
-    data_manager = DataManager()
-
-    # Start a scraping session
-    session_id = data_manager.start_scraping_session()
-
-    # Simulate scraping and updating items
-    data_manager.update_item("item1", {"name": "Item 1", "value": 100})
-    data_manager.update_item("item2", {"name": "Item 2", "value": 200})
-    data_manager.update_item(
-        "item1", {"name": "Item 1", "value": 150}
-    )  # Update existing item
-
-    # End the scraping session
-    data_manager.end_scraping_session(session_id, 3)
-
-    # Sync the current state to the web service
-    sync_to_web_service(data_manager)
-
-    # Retrieve and print changes
-    changes = data_manager.get_changes()
-    for change in changes:
-        print(f"Change: {change}")
