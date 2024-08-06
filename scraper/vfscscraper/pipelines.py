@@ -2,14 +2,14 @@
 #
 # Don't forget to add your pipeline to the ITEM_PIPELINES setting
 # See: https://docs.scrapy.org/en/latest/topics/item-pipeline.html
-
-import sqlite3
+import logging
 from itertools import chain
 
 # useful for handling different item types with a single interface
 from itemadapter import ItemAdapter
 from scrapy import signals
 from scrapy.exceptions import DropItem
+from scrapy.exporters import PythonItemExporter
 
 from vfscscraper.database import DataManager
 from vfscscraper.items import Company
@@ -52,7 +52,6 @@ class VfscCompanyPipeline:
                     if not director.get("name") and not director.get("entity_name"):
                         director["name"] = "UNKNOWN"
             if "shareholders" in item:
-                item["total_shares"] = item["shareholders"]["total_shares"]
                 for shareholder in chain(
                     item["shareholders"].get("current", []),
                     item["shareholders"].get("former", []),
@@ -64,8 +63,6 @@ class VfscCompanyPipeline:
                         "entity_name"
                     ):
                         shareholder["name"] = "UNKNOWN"
-            else:
-                item["total_shares"] = 0
             if "shares" in item:
                 for share in item["shares"]:
                     if share.get("individual_name"):
@@ -90,6 +87,7 @@ class VfscCompanyPipeline:
 
 class DataManagerPipeline:
     def __init__(self):
+        self.exporter = PythonItemExporter()
         self.data_manager = DataManager()
         self.session_id = None
         self.items_processed = 0
@@ -118,10 +116,12 @@ class DataManagerPipeline:
     def process_item(self, item, spider):
         try:
             spider.logger.info("Processing item: %s", item["company_number"])
-            self.data_manager.update_item(item)
+            data = self.exporter.export_item(item)
+            self.data_manager.update_item(data)
             self.items_processed += 1
             return item
         except Exception as e:
+            spider.logger.exception(e)
             self.has_errors = True
             error_message = f"Error processing item {item.get('company_number', 'unknown')}: {str(e)}"
             self.data_manager.record_failed_item(
