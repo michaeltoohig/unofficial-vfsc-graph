@@ -1,0 +1,26 @@
+services:
+  scraper:
+    build:
+      context: ./scraper
+      target: dev
+    volumes:
+      - ./scraper:/app
+    command: ["sleep", "3600"]
+
+  web:
+    container_name: web
+    build:
+      context: ./web
+      target: dev
+    environment:
+      APP_NAME: "VFSC Graph"
+      FLASK_APP: app/main
+      FLASK_RUN_HOST: "0.0.0.0"
+      FLASK_RUN_PORT: "80"
+      FLASK_DEBUG: "1"
+      SECRET_KEY: dev
+    ports:
+      - "127.0.0.1:${PORT}:80"
+    volumes:
+      - ./web:/app
+    command: ["flask", "run"]
