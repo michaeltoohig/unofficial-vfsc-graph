@@ -4,7 +4,6 @@ import hashlib
 import json
 from datetime import datetime, UTC
 
-from scrapy import Item
 from scrapy.utils.serialize import ScrapyJSONEncoder
 
 
