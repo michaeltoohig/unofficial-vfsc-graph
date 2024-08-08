@@ -12,7 +12,7 @@ dist/
 build/
 *.egg-info/
 
-
+logs/
 # while cleaning up my POC code
 *.db
 *.pkl
