@@ -4,6 +4,7 @@ from pathlib import Path
 
 # TODO: add to container env
 db_path = Path("./local-companies.db")
+app_db_path = Path("./app.db")
 
 
 def search_company_names(query: str):

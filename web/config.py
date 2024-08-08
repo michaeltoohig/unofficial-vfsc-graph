@@ -12,3 +12,11 @@ class Config:
     # Static Assets
     STATIC_FOLDER = "static"
     TEMPLATE_FOLDER = "templates"
+
+    # Caching
+    CACHE_TYPE = "FileSystemCache"
+    CACHE_DIR = environ["CACHE_DIR"]  # , "/app/cache")
+    CACHE_DEFAULT_TIMEOUT = int(environ.get("CACHE_TIMEOUT", 300))
+
+    # Logging
+    LOGS_DIR = environ["LOGS_DIR"]  # , "/app/logs")

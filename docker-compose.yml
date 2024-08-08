@@ -8,7 +8,6 @@ services:
     command: ["sleep", "3600"]
 
   web:
-    container_name: web
     build:
       context: ./web
       target: dev
@@ -19,8 +18,16 @@ services:
       FLASK_RUN_PORT: "80"
       FLASK_DEBUG: "1"
       SECRET_KEY: dev
+      CACHE_DIR: "${CACHE_DIR}"
+      CACHE_TIMEOUT: "${CACHE_TIMEOUT}"
+      LOGS_DIR: "${LOGS_DIR}"
     ports:
       - "127.0.0.1:${PORT}:80"
     volumes:
-      - ./web:/app
+      - ./web:/app/app
+      - "./logs:${LOGS_DIR}"
+      - "web_cache_data:${CACHE_DIR}"
     command: ["flask", "run"]
+
+volumes:
+  web_cache_data:

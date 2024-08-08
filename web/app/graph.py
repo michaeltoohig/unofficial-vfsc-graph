@@ -1,74 +1,149 @@
-import json
+from pathlib import Path
+import sqlite3
 
-from app.db import search_company_names, search_individual_names
-from app.graph_utils import extract_subgraph, init_graph
-from flask import Blueprint, request, redirect, url_for, render_template
+import networkx as nx
 
-
-graph_bp = Blueprint("graph", __name__)
+from app.extensions import cache
 
 
-@graph_bp.route("/graph")
-def graph():
-    nodeId = request.args.get("nodeId", default="e-1")
+def _fetch_graph_data(db_path: Path):
+    # TODO: use with block ?
+    conn = sqlite3.connect(str(db_path))
+    cursor = conn.cursor()
 
-    try:
-        G = init_graph()
-        complete_graph = extract_subgraph(G, nodeId)
-    except ValueError as e:
-        return render_template("error.html", message=str(e))
+    # Fetch companies
+    cursor.execute("SELECT id, company_name, entity_status FROM companies")
+    companies = cursor.fetchall()
 
-    nodes = []
-    edges = []
+    # Fetch individuals
+    cursor.execute("SELECT id, name FROM individuals")
+    individuals = cursor.fetchall()
 
-    for node, data in complete_graph.nodes(data=True):
-        nodes.append(
-            {
-                "data": {
-                    "id": node,
-                    "name": data["label"],
-                    "type": data["type"],
-                    "status": data["status"],
-                    "lastseen": None,
-                }
-            }
+    # Fetch company_directors relationships
+    cursor.execute("SELECT company_id, individual_id, entity_id FROM company_directors")
+    directors = cursor.fetchall()
+
+    # Fetch company_shareholders relationships
+    cursor.execute(
+        "SELECT company_id, individual_id, entity_id, number_of_shares FROM company_shareholders"
+    )
+    shareholders = cursor.fetchall()
+
+    conn.close()
+
+    return companies, individuals, directors, shareholders
+
+
+def _construct_graph(companies, individuals, directors, shareholders):
+    G = nx.MultiDiGraph()
+
+    # Add company nodes
+    company_nodes = []
+    for company_id, company_name, entity_status in companies:
+        company_nodes.append(company_id)
+        G.add_node(
+            f"e-{company_id}",
+            label=company_name,
+            status=entity_status,
+            type="entity",
         )
 
-    for source, target, data in complete_graph.edges(data=True):
-        edges.append(
-            {
-                "data": {
-                    "source": source,
-                    "target": target,
-                    "relationship": data["relationship"],
-                }
-            }
+    # Add individual nodes
+    individual_nodes = []
+    for individual_id, individual_name in individuals:
+        individual_nodes.append(individual_id)
+        G.add_node(
+            f"i-{individual_id}",
+            label=individual_name,
+            status=None,
+            type="individual",
         )
 
-    graph_data = json.dumps({"nodes": nodes, "edges": edges})
-    return render_template("graph.html.j2", graph_data=graph_data)
+    # Add director edges
+    for company_id, individual_id, entity_id in directors:
+        if individual_id and individual_id in individual_nodes:
+            G.add_edge(
+                f"i-{individual_id}",
+                f"e-{company_id}",
+                relationship="director",
+            )
+        elif entity_id and entity_id in company_nodes:
+            G.add_edge(
+                f"e-{entity_id}",
+                f"e-{company_id}",
+                relationship="director",
+            )
+
+    # Calculate shareholder edge weight
+    company_shares = {}
+    for company_id, individual_id, entity_id, number_of_shares in shareholders:
+        if company_id not in company_shares:
+            company_shares[company_id] = {}
+        if individual_id:
+            company_shares[company_id][f"i-{individual_id}"] = number_of_shares
+        elif entity_id:
+            company_shares[company_id][f"e-{entity_id}"] = number_of_shares
+    company_shares_percentages = {}
+    for company_id, data in company_shares.items():
+        company_shares_percentages[company_id] = {}
+        total_shares = sum(map(lambda v: v, data.values()))
+        for key, value in data.items():
+            try:
+                company_shares_percentages[company_id][key] = value / total_shares
+            except ZeroDivisionError:
+                company_shares_percentages[company_id][key] = 1
+
+    # Add shareholder edges
+    for company_id, individual_id, entity_id, _ in shareholders:
+        if individual_id and individual_id in individual_nodes:
+            weight = company_shares_percentages[company_id][f"i-{individual_id}"]
+            G.add_edge(
+                f"i-{individual_id}",
+                f"e-{company_id}",
+                relationship="shareholder",
+                weight=weight,
+            )
+        elif entity_id and entity_id in company_nodes:
+            weight = company_shares_percentages[company_id][f"e-{entity_id}"]
+            G.add_edge(
+                f"e-{entity_id}",
+                f"e-{company_id}",
+                relationship="shareholder",
+                weight=weight,
+            )
+
+    return G
 
 
-@graph_bp.route("/company/<id>")
-def company(id):
-    return redirect(url_for("graph.graph", nodeId=f"e-{id}"))
+@cache.memoize()
+def load_graph():
+    """Return the NetworkX graph constructed from values in companies database.
+
+    This function is memoized for performance.
+    The backing database does not update often so no problem with extended caching.
+    """
+    # TODO: include in container env
+    db_path = Path("./local-companies.db")
+    companies, individuals, directors, shareholders = _fetch_graph_data(db_path)
+    return _construct_graph(companies, individuals, directors, shareholders)
 
 
-@graph_bp.route("/individual/<id>")
-def individual(id):
-    return redirect(url_for("graph.graph", nodeId=f"i-{id}"))
+@cache.memoize()
+def _calculate_subgraph_nodes(G, node_id: str, depth: int, reverse: bool = False):
+    """Return list of nodes connected to the given node_id."""
+    return list(nx.bfs_tree(G, node_id, depth_limit=depth, reverse=reverse))
 
 
-@graph_bp.route("/search", methods=["POST"])
-def search():
-    query = request.form.get("query", "")
-    if not query:
-        return redirect(url_for("graph.graph"))
+def extract_subgraph(G, node_id, depth: int = 1):
+    """Return a subgraph for the given node ID.
 
-    query = request.form.get("query")
-    company_results = search_company_names(query)
-    individual_results = search_individual_names(query)
-    results = individual_results
-    results.extend(list(company_results))
+    NOTE: subgraph can not be memoized because it can not be pickled.
+    """
+    if node_id not in G:
+        err_msg = f"Node {node_id} not found in the graph"
+        raise ValueError(err_msg)
 
-    return render_template("search.html", query=query, results=results)
+    subgraph_nodes = _calculate_subgraph_nodes(G, node_id, depth)
+    reverse_subgraph_nodes = _calculate_subgraph_nodes(G, node_id, depth, reverse=True)
+    nodes = list(set(subgraph_nodes) | set(reverse_subgraph_nodes))
+    return G.subgraph(nodes)
