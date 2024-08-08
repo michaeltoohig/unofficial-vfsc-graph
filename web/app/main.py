@@ -10,6 +10,7 @@ def create_app():
     app.config.from_object("config.Config")
 
     register_blueprints(app)
+    register_favicon(app)
 
     return app
 
@@ -17,6 +18,16 @@ def create_app():
 def register_blueprints(app):
     app.register_blueprint(home_bp)
     app.register_blueprint(graph_bp)
+
+
+def register_favicon(app):
+    @app.route("/favicon.ico")
+    def favicon():
+        return send_from_directory(
+            app.static_folder,
+            "icons/favicon.ico",
+            mimetype="image/vnd.microsoft.icon",
+        )
 
 
 if __name__ == "__main__":
