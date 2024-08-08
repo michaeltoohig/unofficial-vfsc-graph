@@ -5,7 +5,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.23.0/cytoscape.min.js"></script>
   <script src="https://unpkg.com/layout-base/layout-base.js"></script>
   <script src="https://unpkg.com/cose-base/cose-base.js"></script>
-  <script src="{{ url_for('static', filename='cytoscape-cose-bilkent.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/cytoscape-cose-bilkent.js') }}"></script>
   <style>
     #cy {
       width: 100%;
@@ -74,7 +74,7 @@
   // Embed the graph data directly in the template
   const graphData = {{ graph_data|safe }};
 </script>
-<script src="{{ url_for('static', filename='graph.js') }}"></script>
+<script src="{{ url_for('static', filename='js/graph.js') }}"></script>
 {% endblock %}
 {% block scripts %}
   {{ super() }}
