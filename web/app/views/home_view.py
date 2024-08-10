@@ -1,6 +1,8 @@
 from pathlib import Path
 import re
 
+from app.db.app_db import get_popular_nodes
+from app.db.graph_db import get_company_by_id, get_individual_by_id
 from flask import Blueprint, current_app as app
 from flask import render_template
 import markdown
@@ -14,6 +16,22 @@ home_bp = Blueprint("home", __name__)
 
 @home_bp.route("/")
 def index():
+    nodeIds = get_popular_nodes()
+    popular = []
+    for nodeId in nodeIds:
+        node_type, node_id = nodeId["node_id"].split("-", 1)
+        if node_type == "e":
+            entity = get_company_by_id(node_id)
+            popular.append(entity)
+        elif node_type == "i":
+            individual = get_individual_by_id(node_id)
+            popular.append(individual)
+
+    return render_template("index.html", popular=popular)
+
+
+@home_bp.route("/about")
+def about():
     with Path("HOME.md").open() as fp:
         formatter = HtmlFormatter(
             style="solarized-light",
@@ -49,7 +67,7 @@ def index():
         html = re.sub(r"<h([1-3])>(.+)</h\1>", replace_heading, html)
 
         return render_template(
-            "index.html",
+            "about.html",
             content=Markup(html),
             styles=Markup(styles),
         )

@@ -7,7 +7,32 @@
   <div class="container pb-5">
     <div class="row justify-content-center">
       <div class="col-auto col-md-10">
-        {{ content }}
+
+        <h2 class="mb-4">Top 10 Visited</h2>
+        <ul class="list-group">
+          {% for item in popular %}
+          {% if item.type == "company" %}
+          {% set nodeId = 'e-' + item.id %}
+          <li class="list-group-item">
+            <small class="text-muted">{{ item['type'] }}</small>
+            <a href="{{ url_for('graph.graph', nodeId=nodeId) }}">
+              <h5 class="mb-1">{{ item.name }} ({{ item.number }})</h5>
+            </a>
+            <p class="mb-1">{{ item.status }}</p>
+            <small class="text-muted">{{ item.registration_date }} | {{ item.company_type }}</small>
+          </li>
+          {% elif item.type == "individual" %}
+          {% set nodeId = 'i-' + item.id %}
+          <li class="list-group-item">
+            <small class="text-muted">{{ item['type'] }}</small>
+            <a href="{{ url_for('graph.graph', nodeId=nodeId) }}">
+              <h5 class="mb-1">{{ item['name'] }}</h5>
+            </a>
+          </li>
+          {% endif %}
+          {% endfor %}
+        </ul>
+
       </div>
     </div>
   </div>
