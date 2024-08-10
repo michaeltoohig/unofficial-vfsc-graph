@@ -5,6 +5,7 @@ from flask import Flask, send_from_directory
 from loguru import logger
 
 from app.db.app_db import init_db as init_app_db, close_db as close_app_db
+from app.db.graph_db import close_db as close_graph_db
 from app.extensions import cache
 from app.views.graph_view import graph_bp
 from app.views.home_view import home_bp
@@ -35,14 +36,18 @@ def setup_logging(app):
     )
     log_file = Path(app.config["LOGS_DIR"]) / "app.log"
     if not log_file.parent.exists():
-        log_file.parent.mkdir()
+        log_file.parent.mkdir(mode=744, parents=True)
     logger.add(str(log_file), rotation="50 MB")
 
 
 def setup_db(app):
+    data_dir = Path(app.config["DATA_DIR"])
+    if not data_dir.exists():
+        data_dir.mkdir(mode=744, parents=True)
     with app.app_context():
         init_app_db()
     app.teardown_appcontext(close_app_db)
+    app.teardown_appcontext(close_graph_db)
 
 
 def register_extensions(app):

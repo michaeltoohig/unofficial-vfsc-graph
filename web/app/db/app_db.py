@@ -1,15 +1,11 @@
 import sqlite3
-from pathlib import Path
-from flask import g
-
-# TODO: envvars
-APP_DATABASE = Path("./app.db")
+from flask import g, current_app
 
 
 def get_db():
     db = getattr(g, "_app_database", None)
     if db is None:
-        db = g._database = sqlite3.connect(APP_DATABASE)
+        db = g._app_database = sqlite3.connect(str(current_app.config["APP_DB"]))
         db.row_factory = sqlite3.Row
     return db
 
@@ -21,7 +17,7 @@ def close_db(e=None):
 
 
 def init_db():
-    with sqlite3.connect(APP_DATABASE) as conn:
+    with sqlite3.connect(str(current_app.config["APP_DB"])) as conn:
         conn.execute(
             """
             CREATE TABLE IF NOT EXISTS visits (
@@ -57,6 +53,7 @@ def get_popular_nodes(limit=10):
     """,
         (limit,),
     )
+    # TODO: return dict instead of tuple
     return cursor.fetchall()
 
 

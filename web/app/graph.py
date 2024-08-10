@@ -1,14 +1,14 @@
-from pathlib import Path
-import sqlite3
-
 import networkx as nx
 
+from app.db.graph_db import get_db
 from app.extensions import cache
 
 
-def _fetch_graph_data(db_path: Path):
+def _fetch_graph_data():
     # TODO: use with block ?
-    conn = sqlite3.connect(str(db_path))
+    #
+    # conn = sqlite3.connect(str(db_path))
+    conn = get_db()
     cursor = conn.cursor()
 
     # Fetch companies
@@ -29,7 +29,7 @@ def _fetch_graph_data(db_path: Path):
     )
     shareholders = cursor.fetchall()
 
-    conn.close()
+    # conn.close()
 
     return companies, individuals, directors, shareholders
 
@@ -122,9 +122,7 @@ def load_graph():
     This function is memoized for performance.
     The backing database does not update often so no problem with extended caching.
     """
-    # TODO: include in container env
-    db_path = Path("./local-companies.db")
-    companies, individuals, directors, shareholders = _fetch_graph_data(db_path)
+    companies, individuals, directors, shareholders = _fetch_graph_data()
     return _construct_graph(companies, individuals, directors, shareholders)
 
 

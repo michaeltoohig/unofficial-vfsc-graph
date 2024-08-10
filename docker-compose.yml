@@ -21,10 +21,14 @@ services:
       CACHE_DIR: "${CACHE_DIR}"
       CACHE_TIMEOUT: "${CACHE_TIMEOUT}"
       LOGS_DIR: "${LOGS_DIR}"
+      DATA_DIR: "${DATA_DIR}"
+      APP_DB_FILE: "${APP_DB_FILE}"
+      GRAPH_DB_FILE: "${GRAPH_DB_FILE}"
     ports:
       - "127.0.0.1:${PORT}:80"
     volumes:
       - ./web:/app/app
+      - "./data:${DATA_DIR}"
       - "./logs:${LOGS_DIR}"
       - "web_cache_data:${CACHE_DIR}"
     command: ["flask", "run"]
