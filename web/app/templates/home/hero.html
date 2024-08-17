@@ -1,7 +1,7 @@
 {% macro stat_item(item, count) %}
 <div class="col-lg-3 col-6">
   <div class="stats-item text-center w-100 h-100">
-    <span data-purecounter-start="0" data-purecounter-end="{{ count }}" data-purecounter-duration="2"
+    <span data-purecounter-start="0" data-purecounter-end="{{ count }}" data-purecounter-duration="1"
       class="purecounter">{{ count }}</span>
     <p>{{ item }}</p>
   </div>
@@ -17,9 +17,13 @@
     <div class="row gy-4 d-flex justify-content-between">
       <div class="col-lg-6 order-2 order-lg-1 d-flex flex-column justify-content-center">
         <h2 data-aos="fade-up">Visualizing Vanuatu's Corporate Landscape</h2>
-        <p data-aos="fade-up" data-aos-delay="100">Our platform reshapes public records to provide a comprehensive
-          visual analysis of shareholder and director connections within the country.</p>
-
+        <p data-aos="fade-up" data-aos-delay="100">This website reshapes public records from the <a class="light-link"
+            href="https://vfsc.vu">Vanuatu Financial
+            Services
+            Commission</a> and presents them
+          visually
+          as a graph allowing for analysis of shareholder and director connections within the country.
+        </p>
         <form action="{{ url_for('graph.search') }}" method="post" class="form-search d-flex align-items-stretch mb-3"
           data-aos="fade-up" data-aos-delay="200">
           <input name="query" type="text" class="form-control" placeholder="A Company or Individual. e.g. Air Vanuatu">
