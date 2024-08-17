@@ -29,29 +29,52 @@ vfsc spider    >>> scraper -> JSONL
 process.py     >>> JSONL -> distinct -> pkl
 test-sqlite.py >>> pkl -> db
 
-Need periodic scrape
+- [ ] Need periodic scrape
  - target company
  - specific query
 
-Update lastseen
+- [x] company meta-data
+  - last_seen
+  - created_at
+  - updated_at - when a change is detected, different than last_seen
 
-Setup DB
+- [x] home page sections
+  - FAQ
+  - how its made
+  - random node
+
+- [ ] additional list pages
+  - [x] newly registered companies
+  - [ ] recently removed/dissolved/liquidation/etc.
+  - [ ] latest updated_at
+  - [ ] oldest companies (still registered)
+  - [x] popular nodes
+  - [x] recently visited nodes
+  - [ ] significant nodes
+    - large companies (requires outside data)
+    - gov't MPs (requires outside data)
+
+- [x] Setup DB
  - In pipeline to spider
  - Store history & current state of world
 
-Track usage and queries
+- [ ] Track usage and queries
  - separate web db?
  - structure logfiles for parsing later?
 
-Cache
- - NetworkX
- - Pages
+- [ ] Cache
+  - [ ] home page
+  - [ ] random node
+  - [ ] list pages
+
+- [ ] test cache improvement
+ - clean up subgraph calculation function
+ - cache subgraph function
+
+- [x] more attributes on nodes
+ - company number
+ - Registration date
+ - entity_type
+ - addresses
 
 ---
-
-follow insert_company_data
-- [x] 0. check hash of scraped data against history
-- [x] 1. insert or replace company > get ID
-         - remove all old directores, shareholders ?
-- [ ] 2. replace all directors, shareholders, etc.
-- [x] 3. record history change
