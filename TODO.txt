@@ -13,15 +13,15 @@ This why it is important to rebuild the database again and prepare for continuou
 
 ## BAD Data
 
-- [ ] Scrape local companies again (in progress; with failures)
+- [x] Scrape local companies again (in progress; with failures)
 
 Appears early scrapes have too much bad data.
 I can scrape again and have all good results.
 For now I should focus on tools to help process and prepare the database then tools to get data into format for presentation.
 
-- [ ] write to DB last_seen value to know how long since a company was scraped.
+- [x] write to DB last_seen value to know how long since a company was scraped.
   This identifies failed scrapes and old data; allows us to make less costly scraping
-- [ ] read list view company names for purpose of skipping listings and skipping pages
+- [ ] read list view of company names for purpose of skipping listings and skipping pages
 
 ## 2024 08 03 WIP
 
@@ -46,8 +46,8 @@ test-sqlite.py >>> pkl -> db
 - [ ] additional list pages
   - [x] newly registered companies
   - [ ] recently removed/dissolved/liquidation/etc.
-  - [ ] latest updated_at
-  - [ ] oldest companies (still registered)
+  - [x] latest updated_at
+  - [x] oldest companies (still registered)
   - [x] popular nodes
   - [x] recently visited nodes
   - [ ] significant nodes
@@ -62,14 +62,10 @@ test-sqlite.py >>> pkl -> db
  - separate web db?
  - structure logfiles for parsing later?
 
-- [ ] Cache
-  - [ ] home page
-  - [ ] random node
-  - [ ] list pages
-
-- [ ] test cache improvement
- - clean up subgraph calculation function
- - cache subgraph function
+- [x] Cache
+  - [x] home page
+  - [x] random node
+  - [x] list pages
 
 - [x] more attributes on nodes
  - company number
