@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', function () {
   };
 
   const layoutOptions = {
-    name: 'cose',
+    name: 'circle',
     quality: 'proof',
     idealEdgeLength: 64,
     gravity: 0.64,
