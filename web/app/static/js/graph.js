@@ -41,6 +41,10 @@ document.addEventListener('DOMContentLoaded', function () {
   const cy = cytoscape({
     container: document.getElementById('cy'),
     elements: graphData,
+    // interaction elements
+    zoomingEnabled: true,
+    userZoomingEnabled: false,
+
     style: [
       {
         selector: 'node',
@@ -195,18 +199,31 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Node details card
   const nodeCard = document.getElementById('node-card');
-  const nodeName = document.getElementById('node-name');
-  const nodeStatus = document.getElementById('node-status');
-  const nodeLastseen = document.getElementById('node-lastseen');
+  const nodeCardText = document.getElementById('node-card-text')
   const updateUrlBtn = document.getElementById('node-btn')
   let previouslySelectedNode = null;
 
   function updateCard(node) {
     const nodeId = node.id();
     nodeCard.dataset.nodeId = nodeId;
-    nodeName.textContent = `Name: ${node.data('name')}`;
-    nodeStatus.textContent = `Status: ${node.data('status')}`;
-    nodeLastseen.textContent = `Updated: ${node.data('lastseen')}`;
+    nodeCardText.innerHTML = '';
+
+    // Check and add name
+    const nodeName = node.data('name');
+    if (nodeName) {
+      const nameLine = document.createElement('div');
+      nameLine.textContent = `Name: ${nodeName}`;
+      nodeCardText.appendChild(nameLine);
+    }
+
+    // Check and add status
+    const nodeStatus = node.data('status');
+    if (nodeStatus) {
+      const statusLine = document.createElement('div');
+      statusLine.textContent = `Status: ${nodeStatus}`;
+      nodeCardText.appendChild(statusLine);
+    }
+
     nodeCard.style.display = 'block';
   }
 
@@ -250,6 +267,43 @@ document.addEventListener('DOMContentLoaded', function () {
     unselectedNode.removeStyle();
     hideCard();
     previouslySelectedNode = null;
+  });
+
+  // Zoom controls
+  const zoomInBtn = document.getElementById('graph-zoom-in');
+  zoomInBtn.addEventListener('click', function () {
+    let zoomLevel = cy.zoom()
+    cy.animate({
+      zoom: {
+        level: zoomLevel + 1,
+        position: { x: 0, y: 0 },
+      },
+    }, {
+      duation: 200,
+    })
+  })
+  const zoomOutBtn = document.getElementById('graph-zoom-out');
+  zoomOutBtn.addEventListener('click', function () {
+    let zoomLevel = cy.zoom()
+    cy.animate({
+      zoom: {
+        level: zoomLevel - 1,
+        position: { x: 0, y: 0 },
+      },
+    }, {
+      duation: 200,
+    })
+  })
+  cy.on("dblclick", function (e) {
+    let zoomLevel = cy.zoom()
+    cy.animate({
+      zoom: {
+        level: zoomLevel + 1,
+        renderedPosition: e.renderedPosition,
+      },
+    }, {
+      duration: 200,
+    })
   });
 });
 

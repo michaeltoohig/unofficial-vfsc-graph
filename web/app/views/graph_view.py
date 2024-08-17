@@ -15,7 +15,13 @@ from flask import (
 )
 from loguru import logger
 
-from app.db.graph_db import search_company_names, search_individual_names
+from app.db.graph_db import (
+    get_company_by_id,
+    get_individual_by_id,
+    get_random_company_id,
+    search_company_names,
+    search_individual_names,
+)
 from app.extensions import cache
 from app.graph import extract_subgraph, load_graph
 
@@ -66,6 +72,15 @@ def cache_with_node_id():
 @cache_with_node_id()
 def graph():
     node_id = request.args.get("nodeId", default="e-1")
+    company, individual = None, None
+    if node_id.startswith("e-"):
+        company_id = node_id.split("-", 1)[1]
+        company = get_company_by_id(company_id)
+    elif node_id.startswith("i-"):
+        individual_id = node_id.split("-", 1)[1]
+        individual = get_individual_by_id(individual_id)
+    else:
+        return render_template("error.html", message="The node ID is not valid")
 
     try:
         G = load_graph()
@@ -84,7 +99,6 @@ def graph():
                     "name": data["label"],
                     "type": data["type"],
                     "status": data["status"],
-                    "lastseen": None,
                 }
             }
         )
@@ -101,7 +115,11 @@ def graph():
         )
 
     graph_data = json.dumps({"nodes": nodes, "edges": edges})
-    return render_template("graph.html.j2", graph_data=graph_data)
+    return render_template(
+        "graph.html",
+        center_node=company or individual,
+        graph_data=graph_data,
+    )
 
 
 @graph_bp.route("/company/<id>")
@@ -114,16 +132,31 @@ def individual(id):
     return redirect(url_for("graph.graph", nodeId=f"i-{id}"))
 
 
-@graph_bp.route("/search", methods=["POST"])
+@graph_bp.route("/search", methods=["GET", "POST"])
 def search():
-    query = request.form.get("query", "")
-    if not query:
-        return redirect(url_for("graph.graph"))
+    if request.method == "POST":
+        query = request.form.get("query", "")
+        if not query:
+            return redirect(url_for("graph.graph"))
 
-    query = request.form.get("query")
-    company_results = search_company_names(query)
-    individual_results = search_individual_names(query)
-    results = individual_results
-    results.extend(list(company_results))
+        query = request.form.get("query")
+        company_results = search_company_names(query)
+        individual_results = search_individual_names(query)
+    else:
+        query = ""
+        company_results = None
+        individual_results = None
 
-    return render_template("search.html", query=query, results=results)
+    return render_template(
+        "search.html",
+        query=query,
+        companies=company_results,
+        individuals=individual_results,
+    )
+
+
+@graph_bp.route("/random")
+def random_company():
+    # TODO cache
+    company_id = get_random_company_id()
+    return redirect(url_for("graph.company", id=company_id))

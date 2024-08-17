@@ -1,4 +1,5 @@
 import sys
+from datetime import datetime
 from pathlib import Path
 
 from flask import Flask, send_from_directory
@@ -20,6 +21,7 @@ def create_app():
     setup_db(app)
     register_extensions(app)
     register_blueprints(app)
+    register_template_filters(app)
     register_errorhandlers(app)
     register_favicon(app)
 
@@ -57,6 +59,18 @@ def register_extensions(app):
 def register_blueprints(app):
     app.register_blueprint(home_bp)
     app.register_blueprint(graph_bp)
+
+
+def register_template_filters(app):
+    @app.template_filter("format_date")
+    def format_date(dt_str: str) -> str:
+        if not dt_str:
+            return None
+        try:
+            return datetime.strptime(dt_str, "%Y-%m-%d %H:%M:%S").date()
+        except ValueError:
+            # attempt one more common datetime format
+            return datetime.strptime(dt_str[:-6], "%Y-%m-%d %H:%M:%S.%f").date()
 
 
 def register_errorhandlers(app):

@@ -1,0 +1,47 @@
+{% extends '_base.html' %}
+{% block styles %}
+{{ super() }}
+{{ styles }}
+{% endblock %}
+{% block content %}
+
+<!-- Page Title -->
+<div class="page-title dark-background" data-aos="fade"
+  style="background-image: url({{ url_for('static', filename='img/page-title-bg.jpg') }});">
+  <div class="container position-relative">
+
+    <div class="row gy-4 d-flex justify-content-between">
+      <div class="col-lg-6 offset-lg-3 d-flex flex-column justify-content-center">
+        <h1>{{ list_title }}</h1>
+      </div>
+    </div>
+
+  </div>
+</div><!-- End Page Title -->
+
+<!-- List Items Section -->
+<section id="search" class="search section">
+
+  <div class="container">
+
+    <div class="row gy-4">
+
+      {% import '_macros.html' as macros %}
+      <div class="col-lg-6 offset-lg-3 col-md-8 offset-md-2" data-aos="fade-up" data-aos-delay="100">
+        <ul class="list-group">
+          {% for item in items %}
+          {% if item.type == "company" %}
+          {{ macros.company_item(item) }}
+          {% elif item.type == "individual" %}
+          {{ macros.individual_item(item) }}
+          {% endif %}
+          {% endfor %}
+        </ul>
+      </div>
+
+    </div>
+
+  </div>
+
+</section>
+{% endblock %}
