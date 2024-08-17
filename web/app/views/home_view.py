@@ -1,6 +1,4 @@
 import json
-from pathlib import Path
-import re
 
 from app.db.app_db import get_history, get_popular_nodes
 from app.db.graph_db import (
@@ -8,6 +6,8 @@ from app.db.graph_db import (
     get_company_by_id,
     get_db_counter_stats,
     get_individual_by_id,
+    get_latest_updated_companies,
+    get_oldest_registered_companies,
 )
 from app.utils import render_md_template
 from flask import Blueprint, current_app as app
@@ -184,10 +184,24 @@ def list_popular():
     return render_template("list.html", title="Most Popular", items=popular)
 
 
+@home_bp.route("/list/recently-updated")
+def list_updated():
+    items = get_latest_updated_companies()
+    return render_template("list.html", title="Recently Updated Companies", items=items)
+
+
 @home_bp.route("/list/newly-registered")
 def list_new():
     items = get_latest_registered_companies()
     return render_template("list.html", title="Newly Registered Companies", items=items)
+
+
+@home_bp.route("/list/oldest-registered")
+def list_oldest():
+    items = get_oldest_registered_companies()
+    return render_template(
+        "list.html", title="Oldest Registered Companies", items=items
+    )
 
 
 @home_bp.route("/list/recently-visited")

@@ -2,6 +2,8 @@ import random
 import sqlite3
 from flask import g, current_app
 
+from app.extensions import cache
+
 
 def get_db():
     db = getattr(g, "_graph_database", None)
@@ -90,6 +92,7 @@ def get_individual_by_id(node_id):
     )
 
 
+@cache.memoize()
 def get_latest_registered_companies(limit=10):
     db = get_db()
     query = """
@@ -114,10 +117,68 @@ def get_latest_registered_companies(limit=10):
     ]
 
 
-def get_random_company_id():
+@cache.memoize()
+def get_oldest_registered_companies(limit=10):
+    db = get_db()
+    query = """
+        SELECT id, company_name, company_number, company_type, entity_status, registration_date
+        FROM companies
+        WHERE registration_date IS NOT NULL AND entity_status = "Registered"
+        ORDER BY registration_date ASC
+        LIMIT ?
+    """
+    results = db.execute(query, (limit,)).fetchall()
+    return [
+        {
+            "id": result[0],
+            "type": "company",
+            "name": result[1],
+            "number": result[2],
+            "company_type": result[3],
+            "status": result[4],
+            "registration_date": result[5],
+        }
+        for result in results
+    ]
+
+
+@cache.memoize()
+def get_latest_updated_companies(limit=10):
+    db = get_db()
+    query = """
+        SELECT id, company_name, company_number, company_type, entity_status, registration_date
+        FROM companies
+        WHERE updated_at IS NOT NULL
+        ORDER BY updated_at DESC
+        LIMIT ?
+    """
+    results = db.execute(query, (limit,)).fetchall()
+    return [
+        {
+            "id": result[0],
+            "type": "company",
+            "name": result[1],
+            "number": result[2],
+            "company_type": result[3],
+            "status": result[4],
+            "registration_date": result[5],
+        }
+        for result in results
+    ]
+
+
+@cache.memoize()
+def _get_min_max_company_ids():
     db = get_db()
     query = "SELECT MIN(ROWID), MAX(ROWID) FROM companies"
     min_id, max_id = db.execute(query).fetchone()
+    return min_id, max_id
+
+
+@cache.memoize(timeout=15)
+def get_random_company_id():
+    db = get_db()
+    min_id, max_id = _get_min_max_company_ids()
 
     if min_id is None or max_id is None:
         return None
@@ -133,6 +194,7 @@ def get_random_company_id():
     return result[0]
 
 
+@cache.memoize()
 def get_db_counter_stats():
     db = get_db()
     query = "SELECT COUNT(id) FROM individuals"

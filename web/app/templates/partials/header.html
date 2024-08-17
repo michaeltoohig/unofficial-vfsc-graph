@@ -2,8 +2,6 @@
   <div class="container-fluid container-xl position-relative d-flex align-items-center">
 
     <a href="{{ url_for('home.index') }}" class="logo d-flex align-items-center me-auto">
-      <!-- Uncomment the line below if you also wish to use an image logo -->
-      <!-- <img src="assets/img/logo.png" alt=""> -->
       <h1 class="sitename"><span class="short-title-text">Unofficial</span><br>{{ config.APP_NAME }}</h1>
     </a>
 
@@ -21,6 +19,8 @@
                   class="bi bi-chevron-down toggle-dropdown"></i></a>
               <ul>
                 <li><a href="{{ url_for('home.list_new') }}">Newly Registered</a></li>
+                <li><a href="{{ url_for('home.list_oldest') }}">Oldest Registered</a></li>
+                <li><a href="{{ url_for('home.list_updated') }}">Recently Updated</a></li>
               </ul>
             </li>
             <li><a href="{{ url_for('graph.random_company') }}">Random</a></li>
