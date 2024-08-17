@@ -11,3 +11,6 @@ htmlcov/
 dist/
 build/
 *.egg-info/
+
+# ignore raw template materials
+LogisTemplate/
