@@ -155,7 +155,7 @@ def search():
 
 
 @graph_bp.route("/random")
+@cache.cached(timeout=20)
 def random_company():
-    # TODO cache
     company_id = get_random_company_id()
     return redirect(url_for("graph.company", id=company_id))

@@ -1,5 +1,8 @@
 import json
 
+from flask import Blueprint, current_app as app
+from flask import render_template
+
 from app.db.app_db import get_history, get_popular_nodes
 from app.db.graph_db import (
     get_latest_registered_companies,
@@ -10,17 +13,15 @@ from app.db.graph_db import (
     get_oldest_registered_companies,
 )
 from app.utils import render_md_template
-from flask import Blueprint, current_app as app
-from flask import render_template
+from app.extensions import cache
 
 
 home_bp = Blueprint("home", __name__)
 
 
 @home_bp.route("/")
+@cache.cached()
 def index():
-    # TODO: cache this page
-
     # Get counter stats
     counts = get_db_counter_stats()
 
@@ -159,16 +160,19 @@ def index():
 
 
 @home_bp.route("/terms-and-conditions")
+@cache.cached()
 def terms():
     return render_md_template("terms-and-conditions.md", title="Terms & Conditions")
 
 
 @home_bp.route("/privacy-policy")
+@cache.cached()
 def privacy():
     return render_md_template("privacy-policy.md", title="Privacy Policy")
 
 
 @home_bp.route("/list/popular")
+@cache.cached()
 def list_popular():
     nodeIds = get_popular_nodes()
     popular = []
@@ -185,18 +189,21 @@ def list_popular():
 
 
 @home_bp.route("/list/recently-updated")
+@cache.cached()
 def list_updated():
     items = get_latest_updated_companies()
     return render_template("list.html", title="Recently Updated Companies", items=items)
 
 
 @home_bp.route("/list/newly-registered")
+@cache.cached()
 def list_new():
     items = get_latest_registered_companies()
     return render_template("list.html", title="Newly Registered Companies", items=items)
 
 
 @home_bp.route("/list/oldest-registered")
+@cache.cached()
 def list_oldest():
     items = get_oldest_registered_companies()
     return render_template(
@@ -205,6 +212,7 @@ def list_oldest():
 
 
 @home_bp.route("/list/recently-visited")
+@cache.cached()
 def list_recent():
     nodeIds = get_history()
     items = []
@@ -218,46 +226,3 @@ def list_recent():
             items.append(individual)
 
     return render_template("list.html", title="Recently Visited", items=items)
-
-
-# @home_bp.route("/about")
-# def about():
-#     with Path("HOME.md").open() as fp:
-#         formatter = HtmlFormatter(
-#             style="solarized-light",
-#             full=True,
-#             cssclass="codehilite",
-#         )
-#         styles = f"<style>{formatter.get_style_defs()}</style>"
-#         html = (
-#             markdown.markdown(fp.read(), extensions=["codehilite", "fenced_code"])
-#             .replace(
-#                 # Fix relative path for image(s) when rendering README.md on index page
-#                 'src="app/',
-#                 'src="',
-#             )
-#             .replace("codehilite", "codehilite p-2 mb-3")
-#         )
-#
-#         def replace_heading(match):
-#             level = match.group(1)
-#             text = match.group(2)
-#             id = text.translate(
-#                 str.maketrans(
-#                     {
-#                         " ": "-",
-#                         "'": "",
-#                         ":": "",
-#                     }
-#                 )
-#             ).lower()
-#             style = "padding-top: 70px; margin-top: -70px;"
-#             return f'<h{level} id="{id}" style="{style}">{text}</h{level}>'
-#
-#         html = re.sub(r"<h([1-3])>(.+)</h\1>", replace_heading, html)
-#
-#         return render_template(
-#             "about.html",
-#             content=Markup(html),
-#             styles=Markup(styles),
-#         )
