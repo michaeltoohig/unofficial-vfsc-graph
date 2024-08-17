@@ -1,0 +1,66 @@
+<!-- How It's Made Section -->
+<section id="features" class="features section">
+
+  <!-- Section Title -->
+  <div class="container section-title" data-aos="fade-up">
+    <span>How It's Made</span>
+    <h2>How It's Made</h2>
+    <p>From public records to visualization. This is how the website is made.</p>
+  </div><!-- End Section Title -->
+
+  <div class="container">
+
+    <div class="row gy-4 align-items-center features-item">
+      <div class="col-md-5 d-flex align-items-center" data-aos="zoom-out" data-aos-delay="100">
+        <img src="{{ url_for('static', filename='img/undraw_key_points.svg') }}" class="img-fluid" alt="">
+      </div>
+      <div class="col-md-7" data-aos="fade-up" data-aos-delay="100">
+        <h3>Collect Public Data</h3>
+        <p class="fst-italic">
+
+          We periodically browse the publically available companies records from the VFSC and gather a copy of the data.
+          The data we gather includes the following:
+        </p>
+        <ul>
+          <li><i class="bi bi-check"></i><span>Company details including addresses, filings and more.</span>
+          </li>
+          <li><i class="bi bi-check"></i> <span>Shareholder details and number of shares.</span>
+          </li>
+          <li><i class="bi bi-check"></i> <span>Director details.</span></li>
+        </ul>
+      </div>
+    </div><!-- Features Item -->
+
+    <div class="row gy-4 align-items-center features-item">
+      <div class="col-md-5 order-1 order-md-2 d-flex align-items-center" data-aos="zoom-out" data-aos-delay="200">
+        <img src="{{ url_for('static', filename='img/undraw_data_processing.svg') }}" class="img-fluid" alt="">
+      </div>
+      <div class="col-md-7 order-2 order-md-1" data-aos="fade-up" data-aos-delay="200">
+        <h3>Parse and Organize</h3>
+        <p class="fst-italic">
+          We then parse the raw data and organize into our database.
+        </p>
+        <ul>
+          <li><i class="bi bi-check"></i> <span>Review new and old companies.</span></li>
+          <li><i class="bi bi-check"></i><span> Match shareholders and directors to known companies or
+              individuals.</span>
+          </li>
+        </ul>
+      </div>
+    </div><!-- Features Item -->
+
+    <div class="row gy-4 align-items-center features-item">
+      <div class="col-md-5 d-flex align-items-center" data-aos="zoom-out">
+        <img src="{{ url_for('static', filename='img/undraw_mind_map.svg') }}" class="img-fluid" alt="">
+      </div>
+      <div class="col-md-7" data-aos="fade-up">
+        <h3>Graph The Data</h3>
+        <p>
+          Lastly, we visualize the data and present it to you here.
+        </p>
+      </div>
+    </div><!-- Features Item -->
+
+  </div>
+
+</section><!-- /Features Section -->

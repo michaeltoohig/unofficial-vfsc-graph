@@ -1,0 +1,29 @@
+{% macro page_item(icon, title, description, url) %}
+<div class="col-lg-4 col-md-6 page-item d-flex flex-row align-items-top" data-aos="fade-up" data-aos-delay="100">
+  <div class="icon flex-shrink-0 me-1"><i style="font-size: 1.5rem" class="{{ icon }}"></i></div>
+  <div>
+    <h4 class="title">{{ title }}</h4>
+    <p class="description">{{ description }}</p>
+    <a href="{{ url }}" class="viewmore stretched-link"><span>View More</span><i class="bi bi-arrow-right"></i></a>
+  </div>
+</div>
+<!-- End Featured Page Item -->
+{% endmacro %}
+
+<!-- Featured Pages Section -->
+<section id="featured-pages" class="featured-pages section">
+
+  <div class="container">
+
+    <div class="row gy-4">
+      {{ page_item('bi bi-stars', 'Most Popular', 'View the most popular companies and individuals on our website.',
+      url_for('home.list_popular')) }}
+      {{ page_item('bi bi-building-add', 'New Registrations', 'View the latest registered companies.',
+      url_for('home.list_new')) }}
+      {{ page_item('bi bi-eye', 'Recently Visisted', 'View the most recently visited companies and individuals by other
+      users.', url_for('home.list_recent')) }}
+    </div>
+
+  </div>
+
+</section><!-- /Featured Pages Section -->

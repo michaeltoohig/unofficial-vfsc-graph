@@ -1,0 +1,29 @@
+{% macro company_item(item) %}
+<li class="list-group-item">
+  {% set nodeId = 'e-' + item.id|string %}
+  {% if item.company_type %}
+  <small class="text-muted">{{ item.company_type }} company</small>
+  {% else %}
+  <small class="text-muted">company</small>
+  {% endif %}
+  <a href="{{ url_for('graph.graph', nodeId=nodeId) }}">
+    <h5 class="mb-1">{{ item.name }} {% if item.number %}({{ item.number }}){% endif %}</h5>
+  </a>
+  {% if item.status %}
+  <p class="mb-1">{{ item.status }}</p>
+  {% endif %}
+  {% if item.registration_date %}
+  <small class="text-muted">Registered: {{ item.registration_date | format_date }}</small>
+  {% endif %}
+</li>
+{% endmacro %}
+
+{% macro individual_item(item) %}
+{% set nodeId = 'i-' + item.id|string %}
+<li class="list-group-item">
+  <small class="text-muted">individual</small>
+  <a href="{{ url_for('graph.graph', nodeId=nodeId) }}">
+    <h5 class="mb-1">{{ item.name }}</h5>
+  </a>
+</li>
+{% endmacro %}

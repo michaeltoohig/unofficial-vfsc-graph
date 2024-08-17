@@ -1,43 +1,38 @@
-{% extends 'base.html' %}
+{% extends '_base.html' %}
 {% block styles %}
   {{ super() }}
   {{ styles }}
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.23.0/cytoscape.min.js"></script>
+  <script src="https://unpkg.com/layout-base/layout-base.js"></script>
+  <script src="https://unpkg.com/cose-base/cose-base.js"></script>
+  <script src="{{ url_for('static', filename='js/cytoscape-cose-bilkent.js') }}"></script>
+  <style>
+    #cy {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+  </style>
 {% endblock %}
 {% block content %}
-  <div class="container pb-5">
-    <div class="row justify-content-center">
-      <div class="col-auto col-md-10">
+{% import '_macros.html' as macros %}
 
-        <h2 class="mb-4">Top 10 Visited</h2>
-        <ul class="list-group">
-          {% for item in popular %}
-          {% if item.type == "company" %}
-          {% set nodeId = 'e-' + item.id %}
-          <li class="list-group-item">
-            <small class="text-muted">{{ item['type'] }}</small>
-            <a href="{{ url_for('graph.graph', nodeId=nodeId) }}">
-              <h5 class="mb-1">{{ item.name }} ({{ item.number }})</h5>
-            </a>
-            <p class="mb-1">{{ item.status }}</p>
-            <small class="text-muted">{{ item.registration_date }} | {{ item.company_type }}</small>
-          </li>
-          {% elif item.type == "individual" %}
-          {% set nodeId = 'i-' + item.id %}
-          <li class="list-group-item">
-            <small class="text-muted">{{ item['type'] }}</small>
-            <a href="{{ url_for('graph.graph', nodeId=nodeId) }}">
-              <h5 class="mb-1">{{ item['name'] }}</h5>
-            </a>
-          </li>
-          {% endif %}
-          {% endfor %}
-        </ul>
+{% include 'home/hero.html' %}
 
-      </div>
-    </div>
-  </div>
-  {% include 'partials/footer.html' %}
+{% include 'home/featured-pages.html' %}
+
+{% include 'home/how-its-made.html' %}
+
+{% include 'home/call-to-action.html' %}
+
+{% include 'home/faq.html' %}
+
 {% endblock %}
 {% block scripts %}
   {{ super() }}
+  <script>
+    // Embed the graph data directly in the template
+    const graphData = {{ graph_data|safe }};
+  </script>
+  <script src="{{ url_for('static', filename='js/hero-graph.js') }}"></script>
 {% endblock %}

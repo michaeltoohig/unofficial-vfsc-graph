@@ -1,0 +1,19 @@
+<!-- Call To Action Section -->
+<section id="call-to-action" class="call-to-action section dark-background">
+
+  <img src="{{ url_for('static', filename='img/page-title-bg.jpg') }}" alt="">
+
+  <div class="container">
+    <div class="row justify-content-center" data-aos="zoom-in" data-aos-delay="100">
+      <div class="col-xl-10">
+        <div class="text-center">
+          <h3>Explore The Graph</h3>
+          <p>Still not sure where to go or what to search? Try clicking the button below to browse a completely random
+            company.</p>
+          <a class="cta-btn" href="{{ url_for('graph.random_company') }}">View Random Company</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</section><!-- /Call To Action Section -->

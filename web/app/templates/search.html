@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends '_base.html' %}
 {% block styles %}
   {{ super() }}
   {{ styles }}
@@ -12,41 +12,67 @@
   </style>
 {% endblock %}
 {% block content %}
-<div class="container pb-5">
-  <div class="row justify-content-center">
-    <div class="col-auto col-md-10">
-      <h1>Search</h1>
-      <div>
-        <form action="{{ url_for('graph.search') }}" method="post">
-          <div class="input-group mb-3">
-            <input type="search" class="form-control" name="query" placeholder="Search here..." aria-label="Search here" aria-describedby="button-search">
-            <input class="btn btn-outline-secondary" type="submit" id="button-search">
-          </div>
-        </form>
-      </div>
-      <ul class="list-group">
-          {% for result in results %}
-          <li class="list-group-item result-item">
-            {% if result.type == "company" %}
-            <a href="{{ url_for('graph.company', id=result.id) }}" class="text-decoration-none text-dark">
-            {% elif result.type == "individual" %}
-            <a href="{{ url_for('graph.individual', id=result.id) }}" class="text-decoration-none text-dark">
-            {% endif %}
-            <div class="d-flex justify-content-between align-items-center">
-              <h5 class="mb-0">{{ result.name }}</h5>
-              {% if result.type == "company" %}
-              <small class="text-muted">{{ result.status }}</small>
-              {% endif %}
+
+  <!-- Page Title -->
+  <div class="page-title dark-background" data-aos="fade" style="background-image: url({{ url_for('static', filename='img/page-title-bg.jpg') }});">
+    <div class="container position-relative">
+
+      <div class="row gy-4 d-flex justify-content-between">
+        <div class="col-lg-6 offset-lg-3 d-flex flex-column justify-content-center">
+          <h1>Search</h1>
+          <form action="{{ url_for('graph.search') }}" method="post" class="form-search d-flex align-items-stretch mb-3"
+            data-aos="fade-up" data-aos-delay="200">
+            <div class="input-group">
+              <input value="{{ query }}" name="query" type="text" class="form-control" placeholder="A Company or Individual. e.g. Air Vanuatu">
+              <button type="submit" class="btn btn-primary">Search</button>
             </div>
-              </a>
-          </li>
-          {% endfor %}
-      </ul>
+          </form>
+        </div>
+      </div>
+
     </div>
-  </div>
-</div>
-{% include 'partials/footer.html' %}
-{% endblock %}
-{% block scripts %}
-  {{ super() }}
+  </div><!-- End Page Title -->
+
+  <!-- Search Section -->
+  <section id="search" class="search section">
+
+    <div class="container">
+
+      <div class="row gy-4">
+
+        {% import '_macros.html' as macros %}
+        <div class="col-lg-5 order-1 order-lg-2">
+          {% if companies is not none %}
+          <h3>Companies</h3>
+          {% if not companies %}
+          <p class="text-muted">No results found.</p>
+          {% else %}
+          <ul class="list-group">
+            {% for item in companies %}
+            {{ macros.company_item(item) }}
+            {% endfor %}
+          </ul>
+          {% endif %}
+          {% endif %}
+        </div>
+        <div class="col-lg-5 offset-lg-1 order-2 order-lg-1">
+          {% if individuals is not none %}
+          <h3>Individuals</h3>
+          {% if not individuals %}
+          <p class="text-muted">No results found.</p>
+          {% else %}
+          <ul class="list-group">
+            {% for item in individuals %}
+            {{ macros.individual_item(item) }}
+            {% endfor %}
+          </ul>
+          {% endif %}
+          {% endif %}
+        </div>
+
+      </div>
+
+    </div>
+
+  </section>
 {% endblock %}

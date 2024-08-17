@@ -1,0 +1,33 @@
+<header id="header" class="header d-flex align-items-center fixed-top">
+  <div class="container-fluid container-xl position-relative d-flex align-items-center">
+
+    <a href="{{ url_for('home.index') }}" class="logo d-flex align-items-center me-auto">
+      <!-- Uncomment the line below if you also wish to use an image logo -->
+      <!-- <img src="assets/img/logo.png" alt=""> -->
+      <h1 class="sitename">{{ config.APP_NAME }}</h1>
+    </a>
+
+    <nav id="navmenu" class="navmenu">
+      <ul>
+        <li><a href="{{ url_for('home.index') }}">Home<br></a></li>
+        <li class="dropdown"><a href="#"><span>View More</span> <i class="bi bi-chevron-down toggle-dropdown"></i></a>
+          <ul>
+            <li><a href="{{ url_for('home.list_popular') }}">Popular</a></li>
+            <li><a href="{{ url_for('home.list_recent') }}">Recently Visited</a></li>
+            <li class="dropdown"><a href="#"><span>Companies</span> <i
+                  class="bi bi-chevron-down toggle-dropdown"></i></a>
+              <ul>
+                <li><a href="{{ url_for('home.list_new') }}">Recently Registered</a></li>
+              </ul>
+            </li>
+            <li><a href="{{ url_for('graph.random_company') }}">Random</a></li>
+          </ul>
+        </li>
+      </ul>
+      <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
+    </nav>
+
+    <a class="btn-getstarted" href="{{ url_for('graph.search') }}">Search</a>
+
+  </div>
+</header>
