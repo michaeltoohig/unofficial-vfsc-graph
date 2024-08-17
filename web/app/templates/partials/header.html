@@ -4,20 +4,23 @@
     <a href="{{ url_for('home.index') }}" class="logo d-flex align-items-center me-auto">
       <!-- Uncomment the line below if you also wish to use an image logo -->
       <!-- <img src="assets/img/logo.png" alt=""> -->
-      <h1 class="sitename">{{ config.APP_NAME }}</h1>
+      <h1 class="sitename"><span class="short-title-text">Unofficial</span><br>{{ config.APP_NAME }}</h1>
     </a>
 
     <nav id="navmenu" class="navmenu">
       <ul>
         <li><a href="{{ url_for('home.index') }}">Home<br></a></li>
-        <li class="dropdown"><a href="#"><span>View More</span> <i class="bi bi-chevron-down toggle-dropdown"></i></a>
+        <li><a href="{{ url_for('home.index') }}#about">About<br></a></li>
+        <li><a href="{{ url_for('home.index') }}#faq">FAQ<br></a></li>
+        <li class="dropdown"><a href="#"><span>Featured Pages</span> <i
+              class="bi bi-chevron-down toggle-dropdown"></i></a>
           <ul>
             <li><a href="{{ url_for('home.list_popular') }}">Popular</a></li>
             <li><a href="{{ url_for('home.list_recent') }}">Recently Visited</a></li>
             <li class="dropdown"><a href="#"><span>Companies</span> <i
                   class="bi bi-chevron-down toggle-dropdown"></i></a>
               <ul>
-                <li><a href="{{ url_for('home.list_new') }}">Recently Registered</a></li>
+                <li><a href="{{ url_for('home.list_new') }}">Newly Registered</a></li>
               </ul>
             </li>
             <li><a href="{{ url_for('graph.random_company') }}">Random</a></li>
