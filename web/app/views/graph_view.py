@@ -44,7 +44,6 @@ def cache_with_node_id():
             logger.info(f"Got cached: {bool(cached_response)}")
 
             if cached_response is None:
-                # TODO: setup proper envvars
                 CACHE_ENDPOINT_TIMEOUT = int(
                     current_app.config.get("CACHE_DEFAULT_TIMEOUT")
                 )
