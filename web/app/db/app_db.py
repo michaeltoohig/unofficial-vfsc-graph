@@ -57,6 +57,21 @@ def get_popular_nodes(limit=10):
     return cursor.fetchall()
 
 
+def get_history(limit=10):
+    db = get_db()
+    cursor = db.execute(
+        """
+        SELECT node_id
+        FROM visits
+        WHERE node_id IS NOT NULL
+        ORDER BY timestamp DESC
+        LIMIT ?
+        """,
+        (limit,),
+    )
+    return cursor.fetchall()
+
+
 def get_user_history(device_id, limit=20):
     db = get_db()
     cursor = db.execute(
