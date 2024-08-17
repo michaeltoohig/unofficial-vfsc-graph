@@ -10,8 +10,8 @@ from scrapy.utils.serialize import ScrapyJSONEncoder
 class DataManager:
     def __init__(self, **kwargs):
         self.logger = logging.getLogger(__name__)
-        self.current_db = sqlite3.connect("xxx_current_state.db")
-        self.history_db = sqlite3.connect("xxx_change_history.db")
+        self.current_db = sqlite3.connect("yyy_current_state.db")
+        self.history_db = sqlite3.connect("yyy_change_history.db")
         self.setup_databases()
         self.json_encoder = ScrapyJSONEncoder(**kwargs)
 
@@ -33,6 +33,8 @@ class DataManager:
                     office_address TEXT,
                     postal_address TEXT,
                     total_shares INTEGER,
+                    created_at TIMESTAMP,
+                    updated_at TIMESTAMP,
                     lastseen TIMESTAMP
                 )
             """
@@ -245,8 +247,8 @@ class DataManager:
         query = """
         INSERT INTO companies (company_name, company_number, company_type, entity_type, 
         entity_status, registration_date, annual_filing_month, email_address, 
-        office_address, postal_address, total_shares, lastseen)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        office_address, postal_address, total_shares, created_at, updated_at, lastseen)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
 
         if "shareholders" in company_data:
@@ -266,6 +268,8 @@ class DataManager:
             company_data["addresses"]["postal_address"]["current"]["address"],
             total_shares,
             datetime.now(UTC),
+            datetime.now(UTC),
+            datetime.now(UTC),
         )
         return self.execute_query(self.current_db, query, params)
 
@@ -275,7 +279,7 @@ class DataManager:
         SET company_number = ?, company_type = ?, entity_type = ?,
             entity_status = ?, registration_date = ?, annual_filing_month = ?,
             email_address = ?, office_address = ?, postal_address = ?, total_shares = ?,
-            lastseen = ?
+            updated_at = ?, lastseen = ?
         WHERE id = ?
         """
         if "shareholders" in company_data:
@@ -293,6 +297,7 @@ class DataManager:
             company_data["addresses"]["office_address"]["current"]["address"],
             company_data["addresses"]["postal_address"]["current"]["address"],
             total_shares,
+            datetime.now(UTC),
             datetime.now(UTC),
             company_id,
         )
