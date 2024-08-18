@@ -212,7 +212,7 @@ def list_oldest():
 
 
 @home_bp.route("/list/recently-visited")
-@cache.cached()
+@cache.cached(timeout=15)
 def list_recent():
     nodeIds = get_history()
     items = []

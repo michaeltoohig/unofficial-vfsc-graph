@@ -1,11 +1,17 @@
-import sys
 from datetime import datetime
 from pathlib import Path
+import sys
 
 from flask import Flask, send_from_directory
 from loguru import logger
 
-from app.db.app_db import init_db as init_app_db, close_db as close_app_db
+from app.background_tasks import background_tasks
+from app.db.app_db import (
+    close_db as close_app_db,
+)
+from app.db.app_db import (
+    init_db as init_app_db,
+)
 from app.db.graph_db import close_db as close_graph_db
 from app.extensions import cache
 from app.views.graph_view import graph_bp
@@ -53,6 +59,7 @@ def setup_db(app):
 
 
 def register_extensions(app):
+    background_tasks.init_app(app)
     cache.init_app(app)
 
 
@@ -88,9 +95,3 @@ def register_favicon(app):
             "icons/favicon.ico",
             mimetype="image/vnd.microsoft.icon",
         )
-
-
-if __name__ == "__main__":
-    app = create_app()
-    # Only for debugging while developing
-    app.run(host="0.0.0.0", debug=True, port=8080)

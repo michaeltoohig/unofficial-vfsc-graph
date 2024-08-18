@@ -1,4 +1,7 @@
+import asyncio
 import sqlite3
+from concurrent.futures import ThreadPoolExecutor
+
 from flask import g, current_app
 
 
@@ -10,7 +13,7 @@ def get_db():
     return db
 
 
-def close_db(e=None):
+def close_db(exception=None):
     db = getattr(g, "_app_database", None)
     if db is not None:
         db.close()
@@ -22,22 +25,23 @@ def init_db():
             """
             CREATE TABLE IF NOT EXISTS visits (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                endpoint TEXT NOT NULL,
-                node_id TEXT,
+                node_id TEXT NOT NULL,
                 device_id TEXT NOT NULL,
                 timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
             )
         """
         )
 
-
-def add_visit(endpoint, node_id, device_id):
-    db = get_db()
-    db.execute(
-        "INSERT INTO visits (endpoint, node_id, device_id) VALUES (?, ?, ?)",
-        (endpoint, node_id, device_id),
-    )
-    db.commit()
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS queries (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                query TEXT NOT NULL,
+                device_id TEXT NOT NULL,
+                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        """
+        )
 
 
 def get_popular_nodes(limit=10):
@@ -53,7 +57,6 @@ def get_popular_nodes(limit=10):
     """,
         (limit,),
     )
-    # TODO: return dict instead of tuple
     return cursor.fetchall()
 
 

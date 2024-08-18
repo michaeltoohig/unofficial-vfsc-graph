@@ -58,9 +58,8 @@ test-sqlite.py >>> pkl -> db
  - In pipeline to spider
  - Store history & current state of world
 
-- [ ] Track usage and queries
+- [x] Track usage and queries
  - separate web db?
- - structure logfiles for parsing later?
 
 - [x] Cache
   - [x] home page
