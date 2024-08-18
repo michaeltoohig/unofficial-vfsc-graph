@@ -26,7 +26,6 @@ class BackgroundTasks:
             while True:
                 try:
                     task, args = self.queue.get()
-                    logger.info(f"Task received: {task} {args}")
                     if task is None:  # Sentinel value to indicate shutdown
                         logger.info(
                             "Got worker teardown sentinel value - Exiting thread"
