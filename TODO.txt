@@ -73,3 +73,8 @@ test-sqlite.py >>> pkl -> db
  - addresses
 
 ---
+
+Deploy production
+- uwsgi does not work for our usecase
+  - we require a new base docker image perhaps with gunicorn to support threads
+    careful gunicorn each process has its own local memory and I am using a local queue so I can only support one process
