@@ -8,7 +8,8 @@ from flask import g, current_app
 def get_db():
     db = getattr(g, "_app_database", None)
     if db is None:
-        db = g._app_database = sqlite3.connect(str(current_app.config["APP_DB"]))
+        uri = f"file:{str(current_app.config['APP_DB'])}?mode=ro"
+        db = g._app_database = sqlite3.connect(uri, uri=True)
         db.row_factory = sqlite3.Row
     return db
 
