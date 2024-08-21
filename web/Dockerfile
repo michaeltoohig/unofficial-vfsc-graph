@@ -1,10 +1,11 @@
 ARG PYTHON_VERSION=3.11
 ARG POETRY_VERSION=1.8.3
+ARG GUNICORN_VERSION=23.0.0
 ARG UID=1000
 ARG GID=1000
 ARG USER=app
 
-FROM tiangolo/uwsgi-nginx-flask:python${PYTHON_VERSION} as base
+FROM python:${PYTHON_VERSION}-slim as base
 ENV PYTHONDONTWRITEBYTECODE=1 \
   PYTHONFAULTHANDLER=1 \
   PYTHONUNBUFFERED=1 \
@@ -12,6 +13,15 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
   PIP_DISABLE_PIP_VERSION_CHECK=1 \
   PIP_IGNORE_INSTALLED=1 \
   PIP_NO_CACHE_DIR=1
+
+ARG GUNICORN_VERSION
+RUN pip install --no-cache-dir gunicorn==${GUNICORN_VERSION}
+
+COPY ./start.sh /app/start.sh
+RUN chmod +x /app/start.sh
+
+COPY ./gunicorn_conf.py /app/gunicorn_conf.py
+
 WORKDIR /app/app
 ENV STATIC_PATH=/app/app/app/static
 
@@ -59,3 +69,4 @@ COPY --from=poetry \
   /usr/local/lib/python${PYTHON_VERSION}/site-packages \
   /usr/local/lib/python${PYTHON_VERSION}/site-packages
 COPY . .
+CMD ["/app/start.sh"]
