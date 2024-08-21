@@ -7,6 +7,10 @@ from datetime import datetime, UTC
 from loguru import logger
 
 
+# NOTE: the BackgroundTasks access to database is designed to be syncronous.
+# If more than one worker exists then it can run into database locked errors.
+
+
 class BackgroundTasks:
     def __init__(self, app=None):
         self.queue = queue.Queue(maxsize=1000)
@@ -23,10 +27,11 @@ class BackgroundTasks:
 
     def start_worker(self):
         def worker():
+            logger.debug("Starting worker")
             while True:
                 try:
                     task, args = self.queue.get()
-                    if task is None:  # Sentinel value to indicate shutdown
+                    if task is None:
                         logger.info(
                             "Got worker teardown sentinel value - Exiting thread"
                         )
@@ -53,7 +58,7 @@ class BackgroundTasks:
 
     def record_visit(self, node_id, device_id):
         try:
-            logger.debug(f"Recording visit to node {node_id}")
+            logger.info(f"Recording visit to node {node_id}")
             now = datetime.now(UTC).isoformat()
             self.queue.put_nowait(
                 (
@@ -67,7 +72,7 @@ class BackgroundTasks:
 
     def record_query(self, query, device_id):
         try:
-            logger.debug(f"Recording query for {query}")
+            logger.info(f"Recording query for {query}")
             now = datetime.now(UTC).isoformat()
             self.queue.put_nowait(
                 (
