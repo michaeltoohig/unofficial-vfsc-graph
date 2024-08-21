@@ -63,21 +63,13 @@ All because I didn't want to spin up an independent database service for this pr
 I later found I needed a worker to write webapp usage stats to the webapp SQLite database because it was making my pages load slowly when it was blocking the response.
 Again, I am avoiding additional services such as an independent worker and message queue so I opted for a thread that runs in the Flask app and processes database writes without blocking the webapp response.
 
-This became an issue during deployment as threads are a PITA with production WSGI web servers.
-I also have to be careful with deployment now because I'm using a local queue which means I will be tied to only one process in production.
-Although, I am happy with how it performs in development. 
-
-So this is my current area of work and I may cave and add additional services and setup a more traditional project structure with additional services such as queue and worker service.
-
 ### Road Map
 
 Future goals for completing the project are as follows:
 
- * [ ] Deployment (ansible & opentofu scripts)
- * [ ] Custom base Docker image to reduce size of webapp image
-   * drop nginx from container
+ * [x] Deployment (ansible & opentofu scripts)
+ * [x] Custom base Docker image to reduce size of webapp image
+   * [x] drop nginx from container
  * [ ] Automated and gentle crawl schedule
    * [ ] Automated replacement of webapp graph db
-
-However, my immediate goal is to refactor my background task thread into a worker process to get around deployment issues with my base docker image built on uWSGI which does not support threads as I need, or at least it doesn't perform as intended even when configured supposedly to use threads.
 
